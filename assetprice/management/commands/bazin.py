@@ -1,67 +1,53 @@
-import argparse
-import cloudscraper
-import requests
 import statistics
 from decimal import Decimal
-from django.core.management import BaseCommand
-from django.utils.module_loading import import_string
-from requests import Session
 
 from assetprice import settings
-from assetprice.utils import SearchPayLoad, EarningPayLoad
+from ._driver import BaseWebDriverCommand, ResponseResult
+from ...utils import SearchUrl, EarningUrl
 
 
-class Ticker:
-	def __call__(self, value):
-		try:
-			if isinstance(settings.TICKER_VALIDATOR, str):
-				validator = import_string(settings.TICKER_VALIDATOR)
-				value = validator(value and value.upper()).lower()
-			return value
-		except ValueError as exc:
-			raise argparse.ArgumentTypeError(str(exc))
-
-
-class Command(BaseCommand):
+class Command(BaseWebDriverCommand):
 	"""O comando calcula o preço teto com base na fórmula do Décio Bazin"""
-	headers = {
-		"Cache-Control": "no-cache",
-		"Pragma": "no-cache"
-	}
-
-	def add_arguments(self, parser):
-		parser.add_argument('-t', '--ticker', type=Ticker())
 
 	@classmethod
-	def get_price(cls, session: Session, ticker: str):
-		resp = session.get(settings.SEARCH_URL, data=SearchPayLoad(ticker).payload, headers=cls.headers)
-		if resp.status_code == requests.codes.ok:
-			json_data = resp.json()
-			price = json_data[0]['price']
-			price = price.replace(',', '.')
-			price = Decimal(price)
-			return price
+	def get_price(cls, response: ResponseResult):
+		price = response.data[0]['price']
+		price = price.replace(',', '.')
+		price = Decimal(price)
+		return price
 
 	@classmethod
-	def get_max_price(cls, session: Session, ticker: str):
-		resp = session.get(settings.EARNING_URL, data=EarningPayLoad(ticker).payload, headers=cls.headers)
-		if resp.status_code == requests.codes.ok:
-			json_data = resp.json()
-			yearly = json_data['assetEarningsYearlyModels']
-			avg = statistics.mean([item['value'] for item in yearly])
-			price = Decimal(avg) * settings.BAZIN_TAX
-			return price, avg
+	def get_max_price(cls, response: ResponseResult):
+		yearly = response.data['assetEarningsYearlyModels']
+		avg = statistics.mean([item['value'] for item in yearly])
+		price = Decimal(avg) * settings.BAZIN_TAX
+		return price, avg
 
-	def get_data(self, ticker: str):
+	@staticmethod
+	def get_url(url, payload):
+		return url + "?" + payload.data
+
+	def get_spec(self, **options):
 		"""Extra e calcula o preço teto"""
-		data = {}
-		with cloudscraper.create_scraper() as scraper:
-			price = self.get_price(scraper, ticker)
-			max_price, avg = self.get_max_price(scraper, ticker)
-			data['price'] = price
-			data['max_price'] = max_price
-			data['diff'] = max_price - price
-			data['avg'] = avg
+		ticker = options['ticker']
+
+		response = self.get_json(str(SearchUrl(ticker)))
+		if options['verbosity'] > 2:
+			print(response)
+		price = self.get_price(response)
+
+		response = self.get_json(str(EarningUrl(ticker)))
+		if options['verbosity'] > 2:
+			print(response)
+
+		max_price, avg = self.get_max_price(response)
+
+		data = {
+			'price': price,
+			'max_price': max_price,
+			'diff': max_price - price,
+			'avg': avg
+		}
 		return data
 
 	def handle(self, *args, **options):
@@ -69,7 +55,7 @@ class Command(BaseCommand):
 		ticker = options['ticker']
 		print("Código: ", ticker, file=self.stdout)
 
-		data = self.get_data(ticker)
+		data = self.get_spec(**options)
 
 		price = data['price']
 		max_price = data['max_price']
