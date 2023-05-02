@@ -45,7 +45,7 @@ class BaseWebDriverCommand(BaseCommand):
 
 		driver = webdriver.Chrome(options=options)
 		stealth(driver,
-		        languages=["en-US", "en"],
+		        languages=["pt-BR", "pt", "en-US", "en"],
 		        vendor="Google Inc.",
 		        platform="Win32",
 		        webgl_vendor="Intel Inc.",
