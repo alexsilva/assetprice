@@ -13,7 +13,7 @@ class AssetEarningHistory(models.Model):
 
 	class Meta:
 		verbose_name = "Histórico de proventos"
-		ordering = ("ticker", "year")
+		ordering = ("ticker", "-year")
 
 	def __str__(self):
 		return f"{self.ticker}: {self.year} R$ {self.paid}"
