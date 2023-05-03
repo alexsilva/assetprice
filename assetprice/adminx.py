@@ -1,3 +1,12 @@
-from django.contrib import admin
+from xadmin.sites import site
 
-# Register your models here.
+from assetprice.models import AssetEarningHistory
+
+
+class AssetEarningHistoryAdmin:
+	list_display = ("ticker", "paid", "year")
+	search_fields = ("ticker", "year")
+	list_filter = ("year",)
+
+
+site.register(AssetEarningHistory, AssetEarningHistoryAdmin)
