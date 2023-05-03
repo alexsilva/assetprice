@@ -31,10 +31,12 @@ class Command(BaseWebDriverCommand):
 
 	def handle(self, *args, **options):
 		ticker = options.pop('ticker')
+		verbosity = options.get('verbosity', 1)
+
 		response = self.get_json(str(EarningUrl(ticker)))
 
-		if options['verbosity'] > 2:
-			print(response.data)
+		if verbosity > 2:
+			print(response.data, file=self.stdout)
 
 		if response.data:
 			self.save_history(ticker, response, **options)
