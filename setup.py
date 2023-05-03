@@ -3,7 +3,11 @@ from setuptools import setup
 setup(
 	name='b3irpf',
 	version='1.0.0',
-	packages=['assetprice', 'assetprice.management'],
+	packages=[
+		'assetprice',
+		'assetprice.management',
+		'assetprice.management.commands'
+	],
 	url='https://github.com/alexsilva/django-assetprice',
 	install_requires=["selenium", "selenium-stealth"],
 	license='MIT',
