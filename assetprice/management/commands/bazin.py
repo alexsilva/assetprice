@@ -42,9 +42,10 @@ class Command(paid_history.Command):
 
 	def get_spec(self, ticker, **options):
 		"""Extra e calcula o preço teto"""
+		verbosity = options.get('verbosity', 1)
 		response = self.get_json(str(SearchUrl(ticker)))
-		if options['verbosity'] > 2:
-			print(response)
+		if verbosity > 2:
+			print(response, file=self.stdout)
 		price = self.get_price(response)
 
 		interval = 5
@@ -54,8 +55,8 @@ class Command(paid_history.Command):
 			max_price = self._get_max_price([item.paid for item in queryset])
 		else:
 			response = self.get_json(str(EarningUrl(ticker)))
-			if options['verbosity'] > 2:
-				print(response)
+			if verbosity > 2:
+				print(response, file=self.stdout)
 
 			max_price = self.get_max_price(response)
 			if max_price.value > 0:
