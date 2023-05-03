@@ -9,6 +9,12 @@ from ._driver import ResponseResult
 from ...utils import SearchUrl, EarningUrl
 
 
+class MaxPrice:
+	def __init__(self, value, avg):
+		self.value = value
+		self.avg = avg
+
+
 class Command(paid_history.Command):
 	"""O comando calcula o preço teto com base na fórmula do Décio Bazin"""
 
@@ -22,14 +28,13 @@ class Command(paid_history.Command):
 	@classmethod
 	def get_max_price(cls, response: ResponseResult):
 		yearly = response.data['assetEarningsYearlyModels']
-		price, avg = cls._get_max_price([item['value'] for item in yearly])
-		return price, avg
+		return cls._get_max_price([item['value'] for item in yearly])
 
 	@classmethod
-	def _get_max_price(cls, values):
+	def _get_max_price(cls, values) -> MaxPrice:
 		avg = statistics.mean([value for value in values])
 		price = Decimal(avg) * settings.BAZIN_TAX
-		return price, avg
+		return MaxPrice(price, avg)
 
 	@staticmethod
 	def get_url(url, payload):
@@ -46,21 +51,20 @@ class Command(paid_history.Command):
 		date_now = now()
 		queryset = self.get_from_history(ticker, date_now.year - interval, date_now.year)
 		if queryset.count() >= interval:
-			max_price, avg = self._get_max_price([item.paid for item in queryset])
+			max_price = self._get_max_price([item.paid for item in queryset])
 		else:
 			response = self.get_json(str(EarningUrl(ticker)))
 			if options['verbosity'] > 2:
 				print(response)
 
-			max_price, avg = self.get_max_price(response)
-			if max_price > 0:
+			max_price = self.get_max_price(response)
+			if max_price.value > 0:
 				self.save_history(ticker, response, **options)
 
 		data = {
 			'price': price,
 			'max_price': max_price,
-			'diff': max_price - price,
-			'avg': avg
+			'diff': max_price.value - price,
 		}
 		return data
 
@@ -70,14 +74,12 @@ class Command(paid_history.Command):
 		print("Código: ", ticker, file=self.stdout)
 
 		data = self.get_spec(ticker, **options)
-
 		price = data['price']
 		max_price = data['max_price']
 		diff = data['diff']
-		avg = data['avg']
 
 		print(f"Taxa aplicada: {settings.BAZIN_TAX:.5}", file=self.stdout)
-		print(f"Preço atual: R$ {price:.5}")
-		print(f"Preço teto: R$ {max_price:.5}")
-		print(f"Diferença de preços R$ {diff:.5}")
-		print(f"Média: {avg:.5}")
+		print(f"Preço atual: R$ {price:.5}", file=self.stdout)
+		print(f"Preço teto: R$ {max_price.value:.5}", file=self.stdout)
+		print(f"Diferença de preços R$ {diff:.5}", file=self.stdout)
+		print(f"Média: {max_price.avg:.5}", file=self.stdout)
