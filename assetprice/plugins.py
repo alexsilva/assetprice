@@ -18,7 +18,7 @@ list_display_average.short_description = "Média"
 class ListHistoryGroupAdmin(BaseAdminPlugin):
 	"""Plugin que agrupa os resultados por ativos"""
 	list_history_grouped = False
-	list_history_interval = 6
+	list_history_interval = 5
 
 	def init_request(self, *args, **kwargs):
 		return self.list_history_grouped
