@@ -1,4 +1,6 @@
+from assetprice import settings
 from django.db.models import Sum, Count, ExpressionWrapper, F, DecimalField
+from django.utils.formats import number_format
 from django.utils.timezone import now
 from xadmin.views import BaseAdminPlugin
 
@@ -15,6 +17,18 @@ list_display_average.admin_order_field = "average"
 list_display_average.short_description = "Média"
 
 
+def list_display_bazin_price(instance):
+	"""bazin price"""
+	value = number_format(instance.average * settings.BAZIN_TAX,
+	                      decimal_pos=2)
+	return f"R$ {value}"
+
+
+list_display_bazin_price.is_column = False
+list_display_bazin_price.admin_order_field = "average"
+list_display_bazin_price.short_description = "Preço"
+
+
 class ListHistoryGroupAdmin(BaseAdminPlugin):
 	"""Plugin que agrupa os resultados por ativos"""
 	list_history_grouped = False
@@ -25,14 +39,19 @@ class ListHistoryGroupAdmin(BaseAdminPlugin):
 
 	def setup(self, *args, **kwargs):
 		self.admin_view.list_display_average = list_display_average
+		self.admin_view.list_display_bazin_price = list_display_bazin_price
 		self.index = 1
 		self.ordering_map = {
 			'paid': "paid__sum",
 			'year': "year__count"
 		}
 
-	def get_list_display(self, list_display):
-		list_display.append("list_display_average")
+	def get_list_display(self, __):
+		list_display = __()
+		list_display.extend([
+			"list_display_average",
+			"list_display_bazin_price"
+		])
 		return list_display
 
 	def queryset(self, qs):
