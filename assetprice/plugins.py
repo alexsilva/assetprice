@@ -1,8 +1,18 @@
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, ExpressionWrapper, F, DecimalField
 from django.utils.timezone import now
 from xadmin.views import BaseAdminPlugin
 
 date_now = now()
+
+
+def list_display_average(instance):
+	"""paid / N. year"""
+	return instance.average
+
+
+list_display_average.is_column = True
+list_display_average.admin_order_field = "average"
+list_display_average.short_description = "Média"
 
 
 class ListHistoryGroupAdmin(BaseAdminPlugin):
@@ -14,16 +24,25 @@ class ListHistoryGroupAdmin(BaseAdminPlugin):
 		return self.list_history_grouped
 
 	def setup(self, *args, **kwargs):
+		self.admin_view.list_display_average = list_display_average
 		self.index = 1
 		self.ordering_map = {
 			'paid': "paid__sum",
 			'year': "year__count"
 		}
 
+	def get_list_display(self, list_display):
+		list_display.append("list_display_average")
+		return list_display
+
 	def queryset(self, qs):
 		qs = qs.filter(year__gt=date_now.year - self.list_history_interval)
 		qs = qs.values("ticker").distinct().order_by()
 		qs = qs.annotate(Sum("paid"), Count("year"))
+		qs = qs.annotate(average=ExpressionWrapper(
+			F(self.ordering_map['paid']) / F(self.ordering_map['year']),
+			output_field=DecimalField()
+		))
 		return qs
 
 	def get_ordering(self, ordering):
@@ -54,9 +73,11 @@ class ListHistoryGroupAdmin(BaseAdminPlugin):
 
 		self.index += 1
 
+		average = obj.pop('average')
 		obj['year'] = obj.pop(self.ordering_map['year'])
 		obj['paid'] = obj.pop(self.ordering_map['paid'])
 
 		obj = self.model(**obj)
+		obj.average = average
 
 		return self.admin_view.result_row(obj)
