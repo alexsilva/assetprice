@@ -8,7 +8,7 @@ class AssetEarningHistory(models.Model):
 	year = models.PositiveIntegerField(verbose_name="Ano")
 	paid = models.DecimalField(verbose_name="Valor pago",
 	                           max_digits=28,
-	                           decimal_places=4,
+	                           decimal_places=8,
 	                           default=Decimal(0))
 
 	class Meta:
