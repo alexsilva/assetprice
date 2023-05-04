@@ -1,10 +1,14 @@
 from django.db.models import Sum, Count
+from django.utils.timezone import now
 from xadmin.views import BaseAdminPlugin
+
+date_now = now()
 
 
 class ListHistoryGroupAdmin(BaseAdminPlugin):
 	"""Plugin que agrupa os resultados por ativos"""
 	list_history_grouped = False
+	list_history_interval = 6
 
 	def init_request(self, *args, **kwargs):
 		return self.list_history_grouped
@@ -17,6 +21,7 @@ class ListHistoryGroupAdmin(BaseAdminPlugin):
 		}
 
 	def queryset(self, qs):
+		qs = qs.filter(year__gt=date_now.year - self.list_history_interval)
 		qs = qs.values("ticker").distinct().order_by()
 		qs = qs.annotate(Sum("paid"), Count("year"))
 		return qs
