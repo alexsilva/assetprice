@@ -33,7 +33,7 @@ class Command(BaseWebDriverCommand):
 		ticker = options.pop('ticker')
 		verbosity = options.get('verbosity', 1)
 
-		response = self.get_json(str(EarningUrl(ticker)))
+		response = self.get_json(str(EarningUrl(ticker)), **options)
 
 		if verbosity > 2:
 			print(response.data, file=self.stdout)
