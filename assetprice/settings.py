@@ -1,6 +1,10 @@
 from django.conf import settings
 from decimal import Decimal
 
+from selenium.webdriver.chrome.service import DEFAULT_EXECUTABLE_PATH
+
+SELENIUM_CHROME_EXECUTABLE_PATH = getattr(settings, "SELENIUM_CHROME_EXECUTABLE_PATH", DEFAULT_EXECUTABLE_PATH)
+
 API_URL = settings.ENV.str("API_URL", default=None)
 
 SEARCH_URL = API_URL + "/home/mainsearchquery"

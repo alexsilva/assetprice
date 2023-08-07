@@ -1,6 +1,5 @@
 import argparse
 import json
-
 from django.core.management import BaseCommand
 from django.utils.module_loading import import_string
 from selenium import webdriver
@@ -34,16 +33,19 @@ class BaseWebDriverCommand(BaseCommand):
 
 	def add_arguments(self, parser):
 		parser.add_argument('-t', '--ticker', type=Ticker())
+		parser.add_argument('-exp', '--executable-path', type=str,
+		                    default=settings.SELENIUM_CHROME_EXECUTABLE_PATH)
 
 	@staticmethod
-	def get_json(url, **cmd_options) -> ResponseResult:
-		options = webdriver.ChromeOptions()
-		options.add_argument("start-maximized")
-		options.add_argument("--headless")
-		options.add_experimental_option("excludeSwitches", ["enable-automation"])
-		options.add_experimental_option('useAutomationExtension', False)
+	def get_json(url, **options) -> ResponseResult:
+		chrome_options = webdriver.ChromeOptions()
+		chrome_options.add_argument("start-maximized")
+		chrome_options.add_argument("--headless")
+		chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+		chrome_options.add_experimental_option('useAutomationExtension', False)
 
-		driver = webdriver.Chrome(options=options)
+		service = Service(options['executable_path'])
+		driver = webdriver.Chrome(service=service, options=chrome_options)
 		stealth(driver,
 		        languages=["pt-BR", "pt", "en-US", "en"],
 		        vendor="Google Inc.",
