@@ -12,7 +12,7 @@ class AssetEarningHistory(models.Model):
 	                           default=Decimal(0))
 
 	class Meta:
-		verbose_name = "Histórico de proventos"
+		verbose_name = "Histórico de provento"
 		ordering = ("ticker", "-year")
 
 	def __str__(self):
