@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
 	name='b3irpf',
-	version='1.0.0',
+	version='1.0.1',
 	packages=[
 		'assetprice',
 		'assetprice.migrations',
